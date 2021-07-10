@@ -121,21 +121,11 @@ pub fn (c Client) trigger_batch(batch []Event) ?http.Response {
 }
 
 
-pub enum ChannelAttribute {
-	user_count
-}
-
-pub enum ChannelFilter {
-	private
-	presence
-}
-
 // channels returns a list of all the channels in an application.
 // It allows you to fetch a hash of occupied channels (optionally filtered by prefix),
 // and optionally one or more attributes for each channel.
 pub fn (c Client) channels(prefix string, attrs string) ?http.Response {
 	c.is_valid() ?
-
 	timestamp := time.now().unix_time()
 	signature := hmac.new(
 		c.secret.bytes(),
@@ -144,12 +134,11 @@ pub fn (c Client) channels(prefix string, attrs string) ?http.Response {
 	)
 
 	url := 'https://api-${c.cluster}.pusher.com/apps/$c.app_id/channels?auth_key=$c.key&auth_timestamp=$timestamp&auth_version=1.0&auth_signature=${signature.hex()}&filter_by_prefix=$prefix&info=$attrs'
-
-	mut request := http.Request{
+	
+	request := http.Request{
 		method: .get
 		url: url
 	}
-
 	return request.do()
 }
 
@@ -165,12 +154,10 @@ pub fn (c Client) channel(channel string, attrs string) ?http.Response {
 	)
 
 	url := 'https://api-${c.cluster}.pusher.com/apps/$c.app_id/channels/$channel?auth_key=$c.key&auth_timestamp=$timestamp&auth_version=1.0&auth_signature=${signature.hex()}&info=$attrs'
-
-	mut request := http.Request{
+	request := http.Request{
 		method: .get
 		url: url
 	}
-
 	return request.do()
 }
 
@@ -189,10 +176,9 @@ pub fn (c Client) get_channel_users(channel string) ?http.Response {
 
 	url := 'https://api-${c.cluster}.pusher.com/apps/$c.app_id/channels/$channel/users?auth_key=$c.key&auth_timestamp=$timestamp&auth_version=1.0&auth_signature=${signature.hex()}'
 
-	mut request := http.Request{
+	request := http.Request{
 		method: .get
 		url: url
 	}
-
 	return request.do()
 }
