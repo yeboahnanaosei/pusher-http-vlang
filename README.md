@@ -9,7 +9,8 @@ Read about pusher here: [Pusher.com](https://pusher.com)
 ### ⚠️ WARNING:  
 This is a very early stage implementation. It is more of a proof-of-concept.  
 **However, the goal is to build a full featured client for V.**  
-At the moment several things 
+
+At the moment a lot of things are not correct:
 * Code duplication everywhere
 * No error handling
 * Possibly inefficient code
