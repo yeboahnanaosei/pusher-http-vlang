@@ -9,7 +9,7 @@ import time
 
 pub struct Client {
 pub mut:
-	app_id      string
+	app_id  string
 	key     string
 	secret  string
 	cluster string = 'mt1'
@@ -29,41 +29,90 @@ fn (c Client) is_valid() ?bool {
 	return true
 }
 
+// prepare_request_url prepares the appropriate url for use in contactint the API
+fn prepare_request_url() ?string {
+	return error('not implemented')
+}
 
+struct EventPayload {
+	name     string
+	data     string
+	channels []string
+}
 
-// trigger publishes an event on the channel with data as the payload
-pub fn (c Client) trigger(channel string, event string, data map[string]string) ?http.Response {
+// trigger publishes an event on one or multiple channels with data as the payload
+pub fn (c Client) trigger(channels []string, event string, data map[string]string) ?http.Response {
 	c.is_valid() ?
 
-	mut payload := map[string]string{}
-	payload['name'] = event
-	payload['channel'] = channel
-	payload['data'] = json.encode(data)
+	payload := EventPayload{
+		name: event
+		channels: channels
+		data: json.encode(data)
+	}
 
 	body := json.encode(payload)
 	body_md5_hash := md5.hexhash(body)
 	timestamp := time.now().unix_time()
 
-	signature := hmac.new(
-		c.secret.bytes(),
-		"POST\n/apps/${c.app_id}/events\nauth_key=${c.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${body_md5_hash}".bytes(),
-		sha256.sum256,
-		sha256.block_size
-	)
+	signature := hmac.new(c.secret.bytes(), 'POST\n/apps/$c.app_id/events\nauth_key=$c.key&auth_timestamp=$timestamp&auth_version=1.0&body_md5=$body_md5_hash'.bytes(),
+		sha256.sum256, sha256.block_size)
 
-	url := 'https://api-${c.cluster}.pusher.com/apps/${c.app_id}/events?auth_key=${c.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${body_md5_hash}&auth_signature=${signature.hex()}'
+	url := 'https://api-${c.cluster}.pusher.com/apps/$c.app_id/events?auth_key=$c.key&auth_timestamp=$timestamp&auth_version=1.0&body_md5=$body_md5_hash&auth_signature=$signature.hex()'
 
-	mut request := http.Request {
-		method: .post,
+	mut request := http.Request{
+		method: .post
 		url: url
 	}
 
-	request.add_header(.content_type, "application/json")
+	request.add_header(.content_type, 'application/json')
 	request.data = body
 	return request.do()
 }
 
-// trigger_multi lets you publish one event on multiple channels
-pub fn (c Client) trigger_multi(channels []string, event string, data map[string]any){
+// An Event encapsulates the details of one Event that can be triggered.
+pub struct Event {
+pub mut:
+	name    string            [required]
+	data    map[string]string [required]
+	channel string            [required]
+}
 
+struct BatchEvent {
+	name string
+	data string
+	channel string
+}
+
+// trigger_batch lets you trigger mulitple Events in one call.
+// Note that you are limited to a maximum of 10 events per call
+pub fn (c Client) trigger_batch(batch []Event) ?http.Response {
+	c.is_valid() ?
+
+	mut payload := []BatchEvent{}
+
+	for e in batch {
+		payload << BatchEvent{
+			name: e.name
+			channel: e.channel
+			data: json.encode(e.data)
+		}
+	}
+
+	body := json.encode(map{"batch": payload})
+	body_md5_hash := md5.hexhash(body)
+	timestamp := time.now().unix_time()
+
+	signature := hmac.new(c.secret.bytes(), 'POST\n/apps/$c.app_id/batch_events\nauth_key=$c.key&auth_timestamp=$timestamp&auth_version=1.0&body_md5=$body_md5_hash'.bytes(),
+		sha256.sum256, sha256.block_size)
+
+	url := 'https://api-${c.cluster}.pusher.com/apps/$c.app_id/batch_events?auth_key=$c.key&auth_timestamp=$timestamp&auth_version=1.0&body_md5=$body_md5_hash&auth_signature=$signature.hex()'
+
+	mut request := http.Request{
+		method: .post
+		url: url
+	}
+
+	request.add_header(.content_type, 'application/json')
+	request.data = body
+	return request.do()
 }
