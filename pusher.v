@@ -130,7 +130,7 @@ pub enum ChannelFilter {
 	presence
 }
 
-// channels fetches information about multiple channels
+// channels returns a list of all the channels in an application.
 // It allows you to fetch a hash of occupied channels (optionally filtered by prefix),
 // and optionally one or more attributes for each channel.
 pub fn (c Client) channels(prefix string, attrs string) ?http.Response {
@@ -153,7 +153,7 @@ pub fn (c Client) channels(prefix string, attrs string) ?http.Response {
 	return request.do()
 }
 
-// channel fetches one or some attributes about a particular channel.
+// channel allows you to get the state of a single channel
 pub fn (c Client) channel(channel string, attrs string) ?http.Response {
 	c.is_valid() ?
 
@@ -165,6 +165,29 @@ pub fn (c Client) channel(channel string, attrs string) ?http.Response {
 	)
 
 	url := 'https://api-${c.cluster}.pusher.com/apps/$c.app_id/channels/$channel?auth_key=$c.key&auth_timestamp=$timestamp&auth_version=1.0&auth_signature=${signature.hex()}&info=$attrs'
+
+	mut request := http.Request{
+		method: .get
+		url: url
+	}
+
+	return request.do()
+}
+
+// get_channel_users returns a list of users in a presence-channel by passing to this
+// method the channel name.
+pub fn (c Client) get_channel_users(channel string) ?http.Response {
+	// TODO: channel must be prefixed with 'presence-'
+	c.is_valid() ?
+
+	timestamp := time.now().unix_time()
+	signature := hmac.new(
+		c.secret.bytes(),
+		'GET\n/apps/$c.app_id/channels/$channel/users\nauth_key=$c.key&auth_timestamp=$timestamp&auth_version=1.0'.bytes(),
+		sha256.sum256, sha256.block_size
+	)
+
+	url := 'https://api-${c.cluster}.pusher.com/apps/$c.app_id/channels/$channel/users?auth_key=$c.key&auth_timestamp=$timestamp&auth_version=1.0&auth_signature=${signature.hex()}'
 
 	mut request := http.Request{
 		method: .get
