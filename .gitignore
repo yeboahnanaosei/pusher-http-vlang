@@ -6,3 +6,4 @@ pusher
 *.so
 *.dylib
 *.dll
+.vscode/
