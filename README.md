@@ -1,5 +1,5 @@
 # Pusher Channels V client
-![V logo](./v_logo_small.png) | ![Pusher Logo](./pusher_logo.svg)
+![V logo](./v_logo.png) | ![Pusher Logo](./pusher_logo.svg)
 :---: | :---:
 
 V module for interacting with the Pusher Channels HTTP API   
